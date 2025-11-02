@@ -1,7 +1,9 @@
-export const runtime = 'edge';
+
+// api/astrofood-ai.js
+export const runtime = 'edge'; // Exécution rapide sur le Edge Network
 
 export default async function handler(req) {
-  // Préflight CORS
+  // Autoriser les appels cross-origin (depuis ton site ou GitHub Pages)
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -13,6 +15,7 @@ export default async function handler(req) {
     });
   }
 
+  // Rejeter les méthodes autres que POST
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Use POST' }), {
       status: 405,
@@ -25,20 +28,19 @@ export default async function handler(req) {
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'Missing OPENAI_API_KEY on server' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({ error: 'Missing OPENAI_API_KEY on server' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 
   const systemPrompt =
-    "Tu es Chef-AI d'AstroFood. Tu donnes des recettes courtes, structurées, avec ingrédients + étapes, adaptées au signe demandé, en gardant le ton chaleureux.";
+    "Tu es Chef-AI d’AstroFood. Tu donnes des recettes courtes, structurées, avec ingrédients et étapes, adaptées au signe demandé, avec un ton chaleureux et poétique.";
 
   let userPrompt = message;
   if (mode === 'recipe') {
-    userPrompt =
-      `Génère une recette AstroFood pour le signe ${sign || 'Bélier'} en langue ${lang}. ` +
-      `Format: 1) Nom, 2) Intro courte, 3) Ingrédients (liste), 4) Préparation (étapes numérotées), 5) Astuce astro.`;
+    userPrompt = `Génère une recette AstroFood pour le signe ${sign || 'Bélier'} en langue ${lang}. 
+Format : 1) Nom du plat, 2) Brève introduction, 3) Ingrédients, 4) Étapes de préparation, 5) Astuce astro.`;
   }
 
   const openaiRes = await fetch('https://api.openai.com/v1/responses', {
@@ -57,8 +59,8 @@ export default async function handler(req) {
   });
 
   if (!openaiRes.ok) {
-    const errText = await openaiRes.text();
-    return new Response(JSON.stringify({ error: 'OpenAI error', detail: errText }), {
+    const err = await openaiRes.text();
+    return new Response(JSON.stringify({ error: 'OpenAI error', detail: err }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
